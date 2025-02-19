@@ -1,0 +1,68 @@
+version: '3.8'
+
+
+services:
+  wordpress:
+    image: bitnami/wordpress
+    env_file:
+      - .env
+    ports:
+      - "80:8080"
+    environment:
+      WORDPRESS_DATABASE_HOST: ${WORDPRESS_DATABASE_HOST}
+      WORDPRESS_DATABASE_NAME: ${WORDPRESS_DATABASE_NAME}
+      WORDPRESS_DATABASE_USER: ${WORDPRESS_DATABASE_USER}
+      WORDPRESS_DATABASE_PASSWORD: ${WORDPRESS_DATABASE_PASSWORD}
+      WORDPRESS_BLOG_NAME: ${WORDPRESS_BLOG_NAME}
+      WORDPRESS_USERNAME: ${WORDPRESS_USERNAME}
+      WORDPRESS_PASSWORD: ${WORDPRESS_PASSWORD}
+      WORDPRESS_EMAIL: ${WORDPRESS_EMAIL}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - backend-network
+      - frontend-network
+    restart: unless-stopped
+
+
+  mysql:
+    image: mysql
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"] #Habia puesto mi ip para hacerlo pero daba como a veces cambia he acabado poniendo localhost
+      interval: 1m
+      retries: 3
+      start_period: 20s
+      timeout: 10s
+    networks:
+      - backend-network
+    restart: unless-stopped
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql 
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - backend-network
+      - frontend-network
+    restart: unless-stopped
+
+networks:
+  frontend-network:
+    name: docker_frontend-network
+    driver: bridge
+  backend-network:
+    name: docker_backend-network
+    driver: bridge
